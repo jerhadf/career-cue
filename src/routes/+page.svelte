@@ -10,6 +10,7 @@
     event: Event & { currentTarget: EventTarget & HTMLInputElement }
   ) {
     file = (event.target as HTMLInputElement)?.files?.[0] ?? null;
+    // could add file validation here
   }
   $: buttonClass = file
     ? "border-black bg-black text-white hover:bg-white hover:text-black"
@@ -21,19 +22,30 @@
     const formData = new FormData();
     if (file) {
       formData.append("file-upload", file);
-    }
-
-    const response = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!response.ok) {
-      console.error("File upload failed:", await response.text());
+    } else {
+      console.error("No file selected");
       return;
     }
-    // Redirect to a new page
-    goto("/about");
+
+    try {
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        console.error("File upload failed:", await response.text());
+        return;
+      }
+
+      // Get the URL of the uploaded file from the response
+      const { url } = await response.json();
+
+      // Redirect to the chat page and pass the URL of the uploaded file as a query parameter
+      goto(`/chat?file=${encodeURIComponent(url)}`);
+    } catch (error) {
+      console.error("An error occurred during file upload:", error);
+    }
   }
 </script>
 
@@ -65,7 +77,7 @@
     <form
       on:submit|preventDefault={handleSubmit}
       class="grid gap-6 w-full mt-2"
-      action="?/upload"
+      action="?/chat"
       method="POST"
       enctype="multipart/form-data"
       use:enhance={() => {
@@ -112,36 +124,28 @@
                   }
                 </style>
                 <style>
-                  /* subtle jiggle animation on hover */
+                  /* subtle jiggle animation */
                   .jiggle:hover {
-                    animation: jiggle 3s infinite;
+                    animation: jiggle 0.3s infinite;
                   }
-                  /* subtle expansion on hover */
+                  /* significant expansion on hover */
                   .expand:hover {
                     transform: scale(2);
-                    transition: all 0.3s ease-in-out;
                   }
                   /* keyframes for jiggle animation */
                   @keyframes jiggle {
                     0%,
                     100% {
-                      transform: translateX(0);
+                      transform: translate(0, 0);
                     }
                     25% {
-                      transform: translateX(-1px);
-                    }
-                    75% {
-                      transform: translateX(1px);
-                    }
-                  }
-                  /* keyframes for pulse animation */
-                  @keyframes pulse {
-                    0%,
-                    100% {
-                      transform: scale(1);
+                      transform: translate(-1px, -1px);
                     }
                     50% {
-                      transform: scale(0.95);
+                      transform: translate(-1px, 1px);
+                    }
+                    75% {
+                      transform: translate(1px, -1px);
                     }
                   }
                 </style>
@@ -149,7 +153,7 @@
                 <img
                   src="/logo.png"
                   alt="Logo"
-                  class="w-24 mb-4 transition-all duration-500 transform jiggle pulse cursor-pointer"
+                  class="w-24 mb-4 transition-all duration-500 transform jiggle expand"
                 />
                 <p class="mt-2 text-center text-sm text-gray-500">
                   Click to upload.

@@ -25,7 +25,11 @@
     "vite": "^4.3.0"
   },
   "dependencies": {
+    "@sveltejs/adapter-vercel": "^3.0.3",
     "@vercel/blob": "^0.8.1",
-    "dotenv-expand": "^10.0.0"
+    "dotenv-expand": "^10.0.0",
+    "langchain": "^0.0.175",
+    "pdf-parse": "^1.1.1",
+    "pdfjs-dist": "^3.11.174"
   }
 }
